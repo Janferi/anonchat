@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'nearby/nearby_screen.dart';
 import 'private/private_chat_list_screen.dart';
-import 'safety/safety_screen.dart';
+import 'profile/profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const List<Widget> _widgetOptions = <Widget>[
     NearbyScreen(),
     PrivateChatListScreen(),
-    SafetyScreen(),
+    ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Nearby',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Private'),
-          BottomNavigationBarItem(icon: Icon(Icons.security), label: 'Safety'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,

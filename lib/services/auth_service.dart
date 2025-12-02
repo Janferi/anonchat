@@ -8,6 +8,8 @@ class AuthService {
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 1));
     // In a real app, this would call POST /auth/otp/request
+    // ignore: avoid_print
+    print('OTP for $phoneNumber: 123456');
     return true;
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/chat_room_model.dart';
 import '../../providers/nearby_provider.dart';
+import '../report/report_user_screen.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final ChatRoomModel room;
@@ -27,6 +28,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
+  @override
+  void deactivate() {
+    Provider.of<NearbyProvider>(context, listen: false).leaveRoom();
+    super.deactivate();
+  }
+
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -45,20 +52,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.room.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.report),
-            onPressed: () {
-              // Show report dialog
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Report feature coming soon')),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text(widget.room.name)),
       body: Column(
         children: [
           Expanded(
@@ -71,30 +65,67 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   alignment: message.isMe
                       ? Alignment.centerRight
                       : Alignment.centerLeft,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(
-                      vertical: 4,
-                      horizontal: 8,
-                    ),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: message.isMe ? Colors.blue[100] : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!message.isMe)
-                          Text(
-                            message.senderHandle,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                              color: Colors.grey,
+                  child: GestureDetector(
+                    onLongPress: () {
+                      if (!message.isMe) {
+                        showModalBottomSheet(
+                          context: context,
+                          builder: (context) => SafeArea(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                ListTile(
+                                  leading: const Icon(
+                                    Icons.flag,
+                                    color: Colors.red,
+                                  ),
+                                  title: Text('Report ${message.senderHandle}'),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => ReportUserScreen(
+                                          userId: message.senderHandle,
+                                          userHandle: message.senderHandle,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ),
-                        Text(message.content),
-                      ],
+                        );
+                      }
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 4,
+                        horizontal: 8,
+                      ),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: message.isMe
+                            ? Colors.blue[100]
+                            : Colors.grey[200],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!message.isMe)
+                            Text(
+                              message.senderHandle,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          Text(message.content),
+                        ],
+                      ),
                     ),
                   ),
                 );
