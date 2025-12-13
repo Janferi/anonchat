@@ -4,6 +4,7 @@ import 'providers/auth_provider.dart';
 import 'providers/nearby_provider.dart';
 import 'providers/private_chat_provider.dart';
 import 'screens/onboarding/consent_screen.dart';
+import 'screens/home_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,7 +28,18 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
         ),
-        home: const ConsentScreen(),
+        home: Consumer<AuthProvider>(
+          builder: (context, auth, _) {
+            if (!auth.isInitialized) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return auth.isAuthenticated
+                ? const HomeScreen()
+                : const ConsentScreen();
+          },
+        ),
       ),
     );
   }

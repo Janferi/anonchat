@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/private_chat_provider.dart';
-import '../../models/friend_request_model.dart';
 import 'private_chat_detail_screen.dart';
 
 class PrivateChatListScreen extends StatefulWidget {
@@ -18,9 +17,10 @@ class _PrivateChatListScreenState extends State<PrivateChatListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<PrivateChatProvider>(context, listen: false).loadData();
+      context.read<PrivateChatProvider>().loadData();
     });
   }
 
@@ -30,168 +30,174 @@ class _PrivateChatListScreenState extends State<PrivateChatListScreen>
     super.dispose();
   }
 
+  // =========================
+  // ADD FRIEND ACTION
+  // =========================
   void _showAddFriendDialog() {
-    final phoneController = TextEditingController();
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Friend'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Enter phone number to send a friend request.'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                hintText: '08...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => const SizedBox(
+        height: 200,
+        child: Center(
+          child: Text('Add Friend Dialog Here', style: TextStyle(fontSize: 18)),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final phone = phoneController.text.trim();
-              if (phone.isNotEmpty) {
-                Navigator.pop(context);
-                try {
-                  await Provider.of<PrivateChatProvider>(
-                    context,
-                    listen: false,
-                  ).sendFriendRequest(phone);
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Friend request sent!')),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Error: $e')));
-                  }
-                }
-              }
-            },
-            child: const Text('Send Request'),
-          ),
-        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<PrivateChatProvider>(context);
+    final provider = context.watch<PrivateChatProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Private Chats'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Chats'),
-            Tab(text: 'Requests'),
-          ],
-        ),
-      ),
-      body: provider.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                // Chats Tab
-                provider.chats.isEmpty
-                    ? const Center(child: Text('No active chats yet.'))
-                    : ListView.builder(
-                        itemCount: provider.chats.length,
-                        itemBuilder: (context, index) {
-                          final chat = provider.chats[index];
-                          return ListTile(
-                            leading: CircleAvatar(
-                              child: Text(chat.otherUserHandle[0]),
-                            ),
-                            title: Text(chat.otherUserHandle),
-                            subtitle: Text(chat.lastMessage),
-                            trailing: Text(
-                              '${chat.lastMessageTime.hour}:${chat.lastMessageTime.minute}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      PrivateChatDetailScreen(chat: chat),
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+      backgroundColor: Colors.white,
 
-                // Requests Tab
-                provider.requests.isEmpty
-                    ? const Center(child: Text('No pending requests.'))
-                    : ListView.builder(
-                        itemCount: provider.requests.length,
-                        itemBuilder: (context, index) {
-                          final req = provider.requests[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            child: ListTile(
-                              leading: const Icon(
-                                Icons.person_add,
-                                color: Colors.blue,
-                              ),
-                              title: Text(req.fromUserHandle),
-                              subtitle: const Text('Wants to connect with you'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.check,
-                                      color: Colors.green,
-                                    ),
-                                    onPressed: () {
-                                      provider.respondToRequest(req.id, true);
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.close,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () {
-                                      provider.respondToRequest(req.id, false);
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+      // =========================
+      // APP BAR
+      // =========================
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Private Chats',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(70),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F5), // Light grey background
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: Colors.black,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+              unselectedLabelColor: Colors.grey[600],
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+              ),
+              overlayColor: MaterialStateProperty.all(Colors.transparent),
+              tabs: const [
+                Tab(text: 'Chats'),
+                Tab(text: 'Received'),
+                Tab(text: 'Sent'),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddFriendDialog,
-        child: const Icon(Icons.person_add),
+          ),
+        ),
+      ),
+
+      // =========================
+      // BODY
+      // =========================
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          provider.chats.isEmpty
+              ? _emptyState('No chats yet')
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: provider.chats.length,
+                  itemBuilder: (_, i) {
+                    final chat = provider.chats[i];
+                    return _ChatTile(
+                      title: chat.otherUserHandle,
+                      subtitle: chat.lastMessage,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PrivateChatDetailScreen(chat: chat),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+          _emptyState('No received requests'),
+          _emptyState('No sent requests'),
+        ],
+      ),
+
+      // =========================
+      // CENTER DOCKED FAB
+      // =========================
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80.0), // Lift above Home Nav Bar
+        child: FloatingActionButton(
+          onPressed: _showAddFriendDialog,
+          backgroundColor: Colors.black,
+          child: const Icon(Icons.person_add, color: Colors.white),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  // =========================
+  // UI HELPERS
+  // =========================
+  Widget _emptyState(String text) {
+    return Center(
+      child: Text(text, style: TextStyle(color: Colors.grey[400])),
+    );
+  }
+}
+
+// =========================
+// CHAT TILE
+// =========================
+class _ChatTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _ChatTile({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ListTile(
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue,
+          child: Text(title[0].toUpperCase()),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
       ),
     );
   }

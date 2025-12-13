@@ -1,9 +1,25 @@
 import 'dart:async';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import '../models/friend_request_model.dart';
 import '../models/private_chat_model.dart';
 import '../models/message_model.dart';
+import 'block_service.dart';
 
 class PrivateChatService {
+  final BlockService _blockService = BlockService();
+
+  // E2EE Simulation
+  late final encrypt.Key _key;
+  late final encrypt.IV _iv;
+  late final encrypt.Encrypter _encrypter;
+
+  PrivateChatService() {
+    // In real app, keys are exchanged via Diffie-Hellman or similar
+    _key = encrypt.Key.fromUtf8('PrivateChatSecureKey32Chars!!!!');
+    _iv = encrypt.IV.fromLength(16);
+    _encrypter = encrypt.Encrypter(encrypt.AES(_key));
+  }
+
   // Mock data
   final List<FriendRequestModel> _mockRequests = [
     FriendRequestModel(
@@ -25,11 +41,34 @@ class PrivateChatService {
     ),
   ];
 
+  final List<FriendRequestModel> _mockSentRequests = [
+    FriendRequestModel(
+      id: 'sent_req1',
+      fromUserHandle: 'Me',
+      fromUserId: 'my_id',
+      timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+      status: RequestStatus.pending,
+    ),
+  ];
+
   Future<List<FriendRequestModel>> getFriendRequests() async {
     await Future.delayed(const Duration(seconds: 1));
+
+    // Filter blocked users
+    final blockedUsers = await _blockService.getBlockedUsers();
+
     return _mockRequests
-        .where((r) => r.status == RequestStatus.pending)
+        .where(
+          (r) =>
+              r.status == RequestStatus.pending &&
+              !blockedUsers.contains(r.fromUserId),
+        )
         .toList();
+  }
+
+  Future<List<FriendRequestModel>> getSentFriendRequests() async {
+    await Future.delayed(const Duration(seconds: 1));
+    return _mockSentRequests;
   }
 
   Future<List<PrivateChatModel>> getPrivateChats() async {
@@ -39,9 +78,8 @@ class PrivateChatService {
 
   Future<bool> sendFriendRequest(String phoneNumber) async {
     await Future.delayed(const Duration(seconds: 2));
-    // Simulate finding user and sending request
     if (phoneNumber == '08123456789') {
-      return true; // User found
+      return true;
     }
     throw Exception('User not found with this phone number');
   }
@@ -50,9 +88,6 @@ class PrivateChatService {
     await Future.delayed(const Duration(seconds: 1));
     final index = _mockRequests.indexWhere((r) => r.id == requestId);
     if (index != -1) {
-      // In real app, update backend
-      // For mock, we just remove it from pending list effectively
-      // If accepted, we would add to _mockChats
       if (accept) {
         _mockChats.add(
           PrivateChatModel(
@@ -77,14 +112,19 @@ class PrivateChatService {
     final controller = StreamController<MessageModel>.broadcast();
     _chatControllers[chatId] = controller;
 
-    // Yield initial history
+    // Yield initial history (Decrypted)
     Future.delayed(const Duration(milliseconds: 100), () {
       if (!controller.isClosed) {
+        // Simulating receiving encrypted data
+        final originalText = 'Hey! Long time no see.';
+        final encrypted = _encrypter.encrypt(originalText, iv: _iv);
+        final decrypted = _encrypter.decrypt(encrypted, iv: _iv);
+
         controller.add(
           MessageModel(
             id: 'msg_hist_1',
             senderHandle: 'Anon_Bestie',
-            content: 'Hey! Long time no see.',
+            content: decrypted, // Decrypted locally
             timestamp: DateTime.now().subtract(const Duration(hours: 2)),
             isMe: false,
           ),
@@ -93,13 +133,27 @@ class PrivateChatService {
     });
 
     // Simulate incoming messages
-    _chatTimers[chatId] = Timer.periodic(const Duration(seconds: 10), (timer) {
+    _chatTimers[chatId] = Timer.periodic(const Duration(seconds: 10), (
+      timer,
+    ) async {
       if (!controller.isClosed) {
+        // Check block status
+        // For simplicity reusing user3 for chat1
+        final blockedUsers = await _blockService.getBlockedUsers();
+        if (blockedUsers.contains('user3')) {
+          // If blocked, don't show message
+          return;
+        }
+
+        final originalText = 'Are you there?';
+        final encrypted = _encrypter.encrypt(originalText, iv: _iv);
+        final decrypted = _encrypter.decrypt(encrypted, iv: _iv);
+
         controller.add(
           MessageModel(
             id: DateTime.now().toString(),
             senderHandle: 'Anon_Bestie',
-            content: 'Are you there?',
+            content: decrypted,
             timestamp: DateTime.now(),
             isMe: false,
           ),
@@ -112,7 +166,15 @@ class PrivateChatService {
 
   Future<void> sendPrivateMessage(String chatId, String content) async {
     await Future.delayed(const Duration(milliseconds: 500));
-    // In real app, POST /private/chat/{id}/message
+    // Simulate Encryption
+    final encrypted = _encrypter.encrypt(content, iv: _iv);
+    // In real app, POST /private/chat/{id}/message with encrypted.base64
+    // ignore: avoid_print
+    print('Sending Encrypted: ${encrypted.base64}');
+  }
+
+  Future<void> blockUser(String userId) async {
+    await _blockService.blockUser(userId);
   }
 
   void _disposeChat(String chatId) {

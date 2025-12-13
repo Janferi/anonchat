@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ChatRoomModel {
   final String id;
   final String name;
@@ -5,6 +7,8 @@ class ChatRoomModel {
   final double distance; // in meters
   final double lat;
   final double lon;
+  final bool isSystem;
+  final Color? themeColor;
 
   ChatRoomModel({
     required this.id,
@@ -13,5 +17,7 @@ class ChatRoomModel {
     required this.distance,
     required this.lat,
     required this.lon,
+    this.isSystem = false,
+    this.themeColor,
   });
 }

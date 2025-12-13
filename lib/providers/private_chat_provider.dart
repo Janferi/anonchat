@@ -9,10 +9,12 @@ class PrivateChatProvider with ChangeNotifier {
   final PrivateChatService _service = PrivateChatService();
 
   List<FriendRequestModel> _requests = [];
+  List<FriendRequestModel> _sentRequests = [];
   List<PrivateChatModel> _chats = [];
   bool _isLoading = false;
 
   List<FriendRequestModel> get requests => _requests;
+  List<FriendRequestModel> get sentRequests => _sentRequests;
   List<PrivateChatModel> get chats => _chats;
   bool get isLoading => _isLoading;
 
@@ -22,10 +24,12 @@ class PrivateChatProvider with ChangeNotifier {
     try {
       final results = await Future.wait([
         _service.getFriendRequests(),
+        _service.getSentFriendRequests(),
         _service.getPrivateChats(),
       ]);
       _requests = results[0] as List<FriendRequestModel>;
-      _chats = results[1] as List<PrivateChatModel>;
+      _sentRequests = results[1] as List<FriendRequestModel>;
+      _chats = results[2] as List<PrivateChatModel>;
     } catch (e) {
       debugPrint(e.toString());
     } finally {
@@ -95,6 +99,18 @@ class PrivateChatProvider with ChangeNotifier {
     } catch (e) {
       // Handle error (e.g. mark message as failed)
       debugPrint('Error sending message: $e');
+    }
+  }
+
+  Future<void> blockUser(String userId) async {
+    try {
+      await _service.blockUser(userId);
+      // Remove from active lists
+      _requests.removeWhere((r) => r.fromUserId == userId);
+      _chats.removeWhere((c) => c.otherUserId == userId);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 

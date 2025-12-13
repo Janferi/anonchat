@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/safety_service.dart';
 
 class ReportUserScreen extends StatefulWidget {
   final String userId;
@@ -34,7 +35,7 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
     super.dispose();
   }
 
-  void _submitReport() {
+  void _submitReport() async {
     if (_formKey.currentState!.validate()) {
       if (_selectedReason == null) {
         ScaffoldMessenger.of(
@@ -43,15 +44,37 @@ class _ReportUserScreenState extends State<ReportUserScreen> {
         return;
       }
 
-      // Simulate API call
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Report submitted successfully. We will review it shortly.',
-          ),
-        ),
-      );
-      Navigator.pop(context);
+      final safetyService = SafetyService();
+
+      // Show loading
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Submitting report...')));
+
+      try {
+        await safetyService.reportUser(
+          widget.userId,
+          _selectedReason!,
+          _descriptionController.text,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Report submitted successfully. We will review it shortly.',
+              ),
+            ),
+          );
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
     }
   }
 
