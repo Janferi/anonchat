@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../onboarding/consent_screen.dart';
+import 'setting.dart';
+import 'permission.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -19,10 +21,10 @@ class ProfileScreen extends StatelessWidget {
     final user = context.watch<AuthProvider>().user;
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text(
-          'Settings',
+          'Profile',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -33,7 +35,6 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // Account & Identity
           _section(
             title: 'Account & Identity',
             child: ListTile(
@@ -47,33 +48,56 @@ class ProfileScreen extends StatelessWidget {
               ),
               title: const Text('Anonymous ID'),
               subtitle: Text(user?.anonHandle ?? 'anon-id-12345xyz'),
-              trailing: TextButton(
-                onPressed: null, // disabled
-                child: const Text('Reset Identity'),
+              trailing: const TextButton(
+                onPressed: null,
+                child: Text('Reset Identity'),
               ),
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // Privacy
           _section(
             title: 'Privacy',
-            child: const Column(
+            child: Column(
               children: [
                 _StaticTile(
                   icon: Icons.storage_outlined,
                   title: 'Data & Permissions',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyDataScreen(),
+                      ),
+                    );
+                  },
                 ),
-                _Divider(),
+                const _Divider(),
                 _StaticTile(
                   icon: Icons.location_on_outlined,
                   title: 'Location Settings',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const DataPermissionsPage(),
+                      ),
+                    );
+                  },
                 ),
-                _Divider(),
+                const _Divider(),
                 _StaticTile(
                   icon: Icons.privacy_tip_outlined,
                   title: 'Consent & Privacy Policy',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyDataScreen(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),
@@ -81,7 +105,6 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // Safety
           _section(
             title: 'Safety',
             child: const Column(
@@ -95,7 +118,7 @@ class ProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          // Logout
+
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
@@ -148,8 +171,9 @@ class ProfileScreen extends StatelessWidget {
 class _StaticTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final VoidCallback? onTap;
 
-  const _StaticTile({required this.icon, required this.title});
+  const _StaticTile({required this.icon, required this.title, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +181,7 @@ class _StaticTile extends StatelessWidget {
       leading: Icon(icon, color: Colors.blue),
       title: Text(title),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-      onTap: null, // disabled
+      onTap: onTap,
     );
   }
 }
