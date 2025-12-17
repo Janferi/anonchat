@@ -1,92 +1,110 @@
 import 'package:flutter/material.dart';
 
-class PrivacyDataScreen extends StatelessWidget {
+class PrivacyDataScreen extends StatefulWidget {
   const PrivacyDataScreen({super.key});
+
+  @override
+  State<PrivacyDataScreen> createState() => _PrivacyDataScreenState();
+}
+
+class _PrivacyDataScreenState extends State<PrivacyDataScreen> {
+  bool pushNotification = true;
+  bool emergencyContact = false;
+  bool backgroundLocation = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          'Privacy & Data',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title
-            const Text(
-              'How We Protect Your Privacy',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Description
-            const Text(
-              'Your privacy and safety are our top priorities. '
-              'Here’s a transparent overview of how we handle your data '
-              'to ensure an anonymous and secure experience.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.black54,
-                height: 1.5,
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Cards
-            _infoCard(
-              icon: Icons.location_on_outlined,
-              title: 'How We Use Your Location',
-              description:
-                  'Your location is only used to connect you with others nearby. '
-                  'It is never shared, stored long-term, or linked to your personal identity.',
-            ),
-
-            _infoCard(
-              icon: Icons.schedule_outlined,
-              title: 'Temporary Message Storage',
-              description:
-                  'Messages are stored temporarily for delivery and then permanently '
-                  'deleted from our servers after a short, defined period.',
-            ),
-
-            _infoCard(
-              icon: Icons.contact_phone_outlined,
-              title: 'Emergency Contact Use',
-              description:
-                  'Your phone number is requested only for emergency purposes and '
-                  'is never visible to other users or used for advertising.',
-            ),
-          ],
+        leading: const BackButton(color: Colors.black),
+        title: const Text(
+          'Data & Permissions',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
         ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _permissionCard(
+            icon: Icons.location_on,
+            title: 'Location Access',
+            description:
+                'Location is the core of our service, allowing you to find and connect with chats nearby.',
+            trailing: TextButton(
+              onPressed: () {},
+              child: const Text(
+                'Manage',
+                style: TextStyle(
+                  color: Color(0xFF3B82F6),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _permissionCard(
+            icon: Icons.notifications,
+            title: 'Push Notifications',
+            description:
+                'Get notified about new messages and important activity so you don’t miss out.',
+            trailing: Switch(
+              value: pushNotification,
+              onChanged: (value) {
+                setState(() {
+                  pushNotification = value;
+                });
+              },
+              activeColor: const Color(0xFF3B82F6),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _permissionCard(
+            icon: Icons.shield,
+            title: 'Emergency-only contact data',
+            description:
+                'This data is encrypted and only used when the emergency button is activated.',
+            trailing: Switch(
+              value: emergencyContact,
+              onChanged: (value) {
+                setState(() {
+                  emergencyContact = value;
+                });
+              },
+              activeColor: const Color(0xFF3B82F6),
+            ),
+          ),
+          const SizedBox(height: 14),
+          _permissionCard(
+            icon: Icons.my_location,
+            title: 'Background location',
+            description:
+                'Improves your experience by keeping local chats updated, even when the app is not in use.',
+            trailing: Switch(
+              value: backgroundLocation,
+              onChanged: (value) {
+                setState(() {
+                  backgroundLocation = value;
+                });
+              },
+              activeColor: const Color(0xFF3B82F6),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _infoCard({
+  Widget _permissionCard({
     required IconData icon,
     required String title,
     required String description,
+    required Widget trailing,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -103,14 +121,15 @@ class PrivacyDataScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              shape: BoxShape.circle,
+              color: const Color(0xFF3B82F6),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: Colors.blue),
+            child: Icon(icon, color: Colors.white),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,7 +137,7 @@ class PrivacyDataScreen extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -134,6 +153,8 @@ class PrivacyDataScreen extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          trailing,
         ],
       ),
     );
