@@ -81,7 +81,6 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
               /// Title
               const Text(
                 'Enable Location to\nConnect',
-                'Enable Location to\nConnect',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
@@ -114,11 +113,11 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                   onPressed: _isLoading ? null : _requestPermission,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2F80ED),
-                    disabledBackgroundColor: const Color(0xFF2F80ED).withOpacity(0.5),
+                    disabledBackgroundColor: const Color(0xFF2F80ED).withValues(alpha: 0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
-                      borderRadius: BorderRadius.circular(28),
                     ),
+                    elevation: 0,
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -130,7 +129,6 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                           ),
                         )
                       : const Text(
-                          'Allow Location',
                           'Allow Location',
                           style: TextStyle(
                             fontSize: 16,

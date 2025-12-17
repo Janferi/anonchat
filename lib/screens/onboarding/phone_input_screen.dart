@@ -52,7 +52,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2F80ED).withOpacity(0.1),
+                      color: const Color(0xFF2F80ED).withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(

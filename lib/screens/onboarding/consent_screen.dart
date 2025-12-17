@@ -32,7 +32,7 @@ class ConsentScreen extends StatelessWidget {
                 width: 96,
                 height: 96,
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.12),
+                  color: Colors.blue.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
