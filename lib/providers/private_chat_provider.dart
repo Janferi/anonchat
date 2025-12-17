@@ -69,10 +69,16 @@ class PrivateChatProvider with ChangeNotifier {
   void enterChat(String chatId) {
     _activeChatMessages = [];
     _chatSubscription?.cancel();
-    _chatSubscription = _service.getPrivateMessages(chatId).listen((message) {
-      _activeChatMessages.add(message);
-      notifyListeners();
-    });
+    _chatSubscription = _service.getPrivateMessages(chatId).listen(
+      (message) {
+        _activeChatMessages.add(message);
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('Error receiving message: $error');
+      },
+      cancelOnError: false,
+    );
   }
 
   void leaveChat() {

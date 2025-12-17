@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +26,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   late final Color _myBubbleColor;
   late final Color _otherBubbleColor;
 
+  NearbyProvider? _nearbyProvider;
+
   @override
   void initState() {
     super.initState();
@@ -35,10 +36,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _otherBubbleColor = Colors.grey.shade200;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<NearbyProvider>(
+      _nearbyProvider = Provider.of<NearbyProvider>(
         context,
         listen: false,
-      ).joinRoom(widget.room.id);
+      );
+      _nearbyProvider!.joinRoom(widget.room.id);
     });
 
     _scrollController.addListener(_handleScroll);
@@ -46,7 +48,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   @override
   void dispose() {
-    Provider.of<NearbyProvider>(context, listen: false).leaveRoom();
+    _nearbyProvider?.leaveRoom();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -89,6 +91,134 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  Color _getAvatarColor(String handle) {
+    final colors = [
+      const Color(0xFF6200EA),
+      const Color(0xFF0091EA),
+      const Color(0xFF00C853),
+      const Color(0xFFFF6D00),
+      const Color(0xFFD50000),
+      const Color(0xFF6200EA),
+      const Color(0xFF0091EA),
+    ];
+    final index = handle.hashCode % colors.length;
+    return colors[index.abs()];
+  }
+
+  void _showUserBottomSheet(String userHandle) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: _getAvatarColor(userHandle),
+                child: Text(
+                  userHandle.isNotEmpty ? userHandle[0].toUpperCase() : '?',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                userHandle,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 32),
+              _buildBottomSheetOption(
+                icon: Icons.send,
+                label: 'Send Private Message',
+                iconColor: Colors.blue,
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement private message
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.block,
+                label: 'Block User',
+                iconColor: Colors.purple,
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement block user
+                },
+              ),
+              _buildBottomSheetOption(
+                icon: Icons.flag,
+                label: 'Report User',
+                iconColor: Colors.red,
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Implement report user
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBottomSheetOption({
+    required IconData icon,
+    required String label,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _sendMessageOptimistic(
     NearbyProvider nearbyProvider,
     AuthProvider authProvider,
@@ -122,8 +252,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         backgroundColor: Colors.white,
         elevation: 0.5,
         iconTheme: const IconThemeData(color: Colors.black),
+        centerTitle: true,
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               widget.room.name,
@@ -201,16 +332,46 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
-          child: Column(
-            crossAxisAlignment: isMe
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: isMe
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             children: [
-              _buildBubble(msg, isMe),
-              const SizedBox(height: 4),
-              Text(
-                DateFormat('HH:mm').format(msg.timestamp),
-                style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+              if (!isMe) ...[
+                GestureDetector(
+                  onTap: () => _showUserBottomSheet(msg.senderHandle),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: _getAvatarColor(msg.senderHandle),
+                    child: Text(
+                      msg.senderHandle.isNotEmpty
+                          ? msg.senderHandle[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: isMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    _buildBubble(msg, isMe),
+                    const SizedBox(height: 4),
+                    Text(
+                      DateFormat('HH:mm').format(msg.timestamp),
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

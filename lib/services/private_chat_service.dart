@@ -115,20 +115,25 @@ class PrivateChatService {
     // Yield initial history (Decrypted)
     Future.delayed(const Duration(milliseconds: 100), () {
       if (!controller.isClosed) {
-        // Simulating receiving encrypted data
-        final originalText = 'Hey! Long time no see.';
-        final encrypted = _encrypter.encrypt(originalText, iv: _iv);
-        final decrypted = _encrypter.decrypt(encrypted, iv: _iv);
+        try {
+          // Simulating receiving encrypted data
+          final originalText = 'Hey! Long time no see.';
+          final encrypted = _encrypter.encrypt(originalText, iv: _iv);
+          final decrypted = _encrypter.decrypt(encrypted, iv: _iv);
 
-        controller.add(
-          MessageModel(
-            id: 'msg_hist_1',
-            senderHandle: 'Anon_Bestie',
-            content: decrypted, // Decrypted locally
-            timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-            isMe: false,
-          ),
-        );
+          controller.add(
+            MessageModel(
+              id: 'msg_hist_1',
+              senderHandle: 'Anon_Bestie',
+              content: decrypted, // Decrypted locally
+              timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+              isMe: false,
+            ),
+          );
+        } catch (e) {
+          // ignore: avoid_print
+          print('Error loading message history: $e');
+        }
       }
     });
 
@@ -137,27 +142,32 @@ class PrivateChatService {
       timer,
     ) async {
       if (!controller.isClosed) {
-        // Check block status
-        // For simplicity reusing user3 for chat1
-        final blockedUsers = await _blockService.getBlockedUsers();
-        if (blockedUsers.contains('user3')) {
-          // If blocked, don't show message
-          return;
+        try {
+          // Check block status
+          // For simplicity reusing user3 for chat1
+          final blockedUsers = await _blockService.getBlockedUsers();
+          if (blockedUsers.contains('user3')) {
+            // If blocked, don't show message
+            return;
+          }
+
+          final originalText = 'Are you there?';
+          final encrypted = _encrypter.encrypt(originalText, iv: _iv);
+          final decrypted = _encrypter.decrypt(encrypted, iv: _iv);
+
+          controller.add(
+            MessageModel(
+              id: DateTime.now().toString(),
+              senderHandle: 'Anon_Bestie',
+              content: decrypted,
+              timestamp: DateTime.now(),
+              isMe: false,
+            ),
+          );
+        } catch (e) {
+          // ignore: avoid_print
+          print('Error receiving message: $e');
         }
-
-        final originalText = 'Are you there?';
-        final encrypted = _encrypter.encrypt(originalText, iv: _iv);
-        final decrypted = _encrypter.decrypt(encrypted, iv: _iv);
-
-        controller.add(
-          MessageModel(
-            id: DateTime.now().toString(),
-            senderHandle: 'Anon_Bestie',
-            content: decrypted,
-            timestamp: DateTime.now(),
-            isMe: false,
-          ),
-        );
       }
     });
 

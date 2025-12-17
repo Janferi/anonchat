@@ -61,33 +61,42 @@ class _PrivateChatListScreenState extends State<PrivateChatListScreen>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Private Chats',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: 24,
+            fontSize: 18,
           ),
         ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_outlined, color: Colors.black),
+            tooltip: 'Add Friend',
+            onPressed: _showAddFriendDialog,
+          ),
+        ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(70),
+          preferredSize: const Size.fromHeight(60),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            padding: const EdgeInsets.all(6),
+            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5), // Light grey background
-              borderRadius: BorderRadius.circular(32),
+              color: const Color(0xFFF5F5F5),
+              borderRadius: BorderRadius.circular(30),
             ),
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(26),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
@@ -96,14 +105,14 @@ class _PrivateChatListScreenState extends State<PrivateChatListScreen>
               labelColor: Colors.black,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13,
               ),
               unselectedLabelColor: Colors.grey[600],
               unselectedLabelStyle: const TextStyle(
                 fontWeight: FontWeight.normal,
-                fontSize: 14,
+                fontSize: 13,
               ),
-              overlayColor: MaterialStateProperty.all(Colors.transparent),
+              overlayColor: WidgetStateProperty.all(Colors.transparent),
               tabs: const [
                 Tab(text: 'Chats'),
                 Tab(text: 'Received'),
@@ -123,7 +132,7 @@ class _PrivateChatListScreenState extends State<PrivateChatListScreen>
           provider.chats.isEmpty
               ? _emptyState('No chats yet')
               : ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   itemCount: provider.chats.length,
                   itemBuilder: (_, i) {
                     final chat = provider.chats[i];
@@ -145,19 +154,6 @@ class _PrivateChatListScreenState extends State<PrivateChatListScreen>
           _emptyState('No sent requests'),
         ],
       ),
-
-      // =========================
-      // CENTER DOCKED FAB
-      // =========================
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 80.0), // Lift above Home Nav Bar
-        child: FloatingActionButton(
-          onPressed: _showAddFriendDialog,
-          backgroundColor: Colors.black,
-          child: const Icon(Icons.person_add, color: Colors.white),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
@@ -185,19 +181,65 @@ class _ChatTile extends StatelessWidget {
     required this.onTap,
   });
 
+  Color _getAvatarColor(String handle) {
+    final colors = [
+      const Color(0xFF6200EA),
+      const Color(0xFF0091EA),
+      const Color(0xFF00C853),
+      const Color(0xFFFF6D00),
+      const Color(0xFFD50000),
+    ];
+    final index = handle.hashCode % colors.length;
+    return colors[index.abs()];
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: ListTile(
         onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: Colors.blue,
-          child: Text(title[0].toUpperCase()),
+          radius: 28,
+          backgroundColor: _getAvatarColor(title),
+          child: Text(
+            title.isNotEmpty ? title[0].toUpperCase() : '?',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 14,
+            ),
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          color: Colors.grey[400],
+        ),
       ),
     );
   }

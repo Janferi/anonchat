@@ -72,20 +72,7 @@ class NearbyService {
     );
     _roomControllers[roomId] = controller;
 
-    // Simulate incoming messages
-    _roomTimers[roomId] = Timer.periodic(const Duration(seconds: 15), (timer) {
-      if (!controller.isClosed) {
-        controller.add(
-          MessageModel(
-            id: DateTime.now().toString(),
-            senderHandle: 'Anon_User',
-            content: 'Hello from nearby! Anyone here?',
-            timestamp: DateTime.now(),
-            isMe: false,
-          ),
-        );
-      }
-    });
+    // No more automatic messages - we use dummy messages from NearbyProvider instead
 
     return controller.stream;
   }

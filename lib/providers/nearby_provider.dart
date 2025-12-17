@@ -20,6 +20,8 @@ class NearbyProvider with ChangeNotifier {
   LatLng? _currentPosition;
   StreamSubscription? _roomSubscription;
   Timer? _cleanupTimer;
+  Timer? _dummyMessageTimer;
+  String? _currentRoomId;
 
   List<ChatRoomModel> get rooms => _rooms;
   bool get isLoading => _isLoading;
@@ -71,6 +73,11 @@ class NearbyProvider with ChangeNotifier {
   void joinRoom(String roomId) {
     leaveRoom();
     _messages.clear();
+    _currentRoomId = roomId;
+
+    // Notify listeners immediately so member count updates
+    notifyListeners();
+
     // Subscribe to messages
     _roomSubscription = _nearbyService.getMessages(roomId).listen((message) {
       _messages.add(message);
@@ -85,13 +92,19 @@ class NearbyProvider with ChangeNotifier {
       );
       notifyListeners();
     });
+
+    // Start dummy messages for demo purposes
+    _startDummyMessages(roomId);
   }
 
   void leaveRoom() {
     _roomSubscription?.cancel();
     _cleanupTimer?.cancel();
+    _dummyMessageTimer?.cancel();
     _roomSubscription = null;
     _cleanupTimer = null;
+    _dummyMessageTimer = null;
+    _currentRoomId = null;
   }
 
   Future<void> createRoom(String name) async {
@@ -114,8 +127,24 @@ class NearbyProvider with ChangeNotifier {
     }
   }
 
-  // Mock member count for now, or fetch from active room logic
-  int get memberCount => 0;
+  // Mock member count for demo purposes
+  int get memberCount {
+    if (_currentRoomId == null) return 0;
+    // Generate random member count based on room name
+    final roomName = _allRooms
+        .firstWhere((r) => r.id == _currentRoomId, orElse: () => _allRooms.first)
+        .name
+        .toLowerCase();
+
+    if (roomName.contains('coffee') || roomName.contains('shop')) {
+      return 8;
+    } else if (roomName.contains('park')) {
+      return 12;
+    } else if (roomName.contains('library')) {
+      return 5;
+    }
+    return 3;
+  }
 
   Future<void> sendMessageOptimistic({
     required String roomId,
@@ -179,6 +208,177 @@ class NearbyProvider with ChangeNotifier {
       _blockedUsers.add(userHandle);
       notifyListeners();
     }
+  }
+
+  void _startDummyMessages(String roomId) {
+    // Get room name to determine topic
+    final room = _allRooms.firstWhere(
+      (r) => r.id == roomId,
+      orElse: () => _allRooms.first,
+    );
+    final roomName = room.name.toLowerCase();
+
+    // Determine conversation topic and users based on room
+    List<Map<String, String>> conversation;
+    if (roomName.contains('coffee') || roomName.contains('shop')) {
+      conversation = _getCoffeeShopConversation();
+    } else if (roomName.contains('park')) {
+      conversation = _getParkConversation();
+    } else if (roomName.contains('library')) {
+      conversation = _getLibraryConversation();
+    } else {
+      conversation = _getGeneralConversation();
+    }
+
+    int messageIndex = 0;
+
+    // Send messages every 5-10 seconds
+    _dummyMessageTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
+      if (messageIndex < conversation.length) {
+        final msgData = conversation[messageIndex];
+        final message = MessageModel(
+          id: DateTime.now().toString() + messageIndex.toString(),
+          senderHandle: msgData['sender']!,
+          content: msgData['content']!,
+          timestamp: DateTime.now(),
+          isMe: false,
+        );
+        _messages.add(message);
+        notifyListeners();
+        messageIndex++;
+      } else {
+        // Loop back to beginning
+        messageIndex = 0;
+      }
+    });
+  }
+
+  List<Map<String, String>> _getCoffeeShopConversation() {
+    return [
+      {
+        'sender': 'User_A823',
+        'content': 'Anyone know of a good coffee shop that\'s open late around here?'
+      },
+      {
+        'sender': 'User_C789',
+        'content': 'Yeah, The Daily Grind on 4th Street is open until 10 PM. Great espresso!'
+      },
+      {
+        'sender': 'User_B456',
+        'content': 'Second that! Their pastries are amazing too.'
+      },
+      {
+        'sender': 'User_D921',
+        'content': 'Has anyone tried their new seasonal latte? Worth it?'
+      },
+      {
+        'sender': 'User_A823',
+        'content': 'I tried it yesterday! The pumpkin spice is really good, not too sweet.'
+      },
+      {
+        'sender': 'User_E234',
+        'content': 'Do they have good WiFi? Looking for a place to work from.'
+      },
+      {
+        'sender': 'User_C789',
+        'content': 'WiFi is solid, and plenty of outlets. Gets busy around lunch though.'
+      },
+    ];
+  }
+
+  List<Map<String, String>> _getParkConversation() {
+    return [
+      {
+        'sender': 'User_J128',
+        'content': 'Beautiful day at the park today! Anyone else here?'
+      },
+      {
+        'sender': 'User_K456',
+        'content': 'Just finished a run around the trail. The weather is perfect!'
+      },
+      {
+        'sender': 'User_L789',
+        'content': 'Are the basketball courts free? Thinking of shooting some hoops.'
+      },
+      {
+        'sender': 'User_M234',
+        'content': 'Yeah they\'re open! I was there 10 mins ago, only one court occupied.'
+      },
+      {
+        'sender': 'User_J128',
+        'content': 'Anyone want to join for a picnic later? Got extra sandwiches.'
+      },
+      {
+        'sender': 'User_N567',
+        'content': 'The food trucks are here today! Tacos and burgers.'
+      },
+      {
+        'sender': 'User_K456',
+        'content': 'Perfect! I\'m starving after that run. Where are they parked?'
+      },
+      {
+        'sender': 'User_N567',
+        'content': 'Near the main entrance, can\'t miss them!'
+      },
+    ];
+  }
+
+  List<Map<String, String>> _getLibraryConversation() {
+    return [
+      {
+        'sender': 'User_P892',
+        'content': 'Looking for a quiet study spot. How crowded is it right now?'
+      },
+      {
+        'sender': 'User_Q345',
+        'content': 'Third floor is pretty empty. Found a good corner desk.'
+      },
+      {
+        'sender': 'User_R678',
+        'content': 'Does anyone know if the study rooms are bookable today?'
+      },
+      {
+        'sender': 'User_S123',
+        'content': 'Yeah, use the library app. Room 304 is free until 5 PM.'
+      },
+      {
+        'sender': 'User_P892',
+        'content': 'Thanks! Need to prep for finals. So stressful.'
+      },
+      {
+        'sender': 'User_T456',
+        'content': 'Same here. Anyone studying for Biology 201?'
+      },
+      {
+        'sender': 'User_Q345',
+        'content': 'I am! Maybe we could form a study group?'
+      },
+    ];
+  }
+
+  List<Map<String, String>> _getGeneralConversation() {
+    return [
+      {
+        'sender': 'User_X111',
+        'content': 'Hey everyone! First time using this app.'
+      },
+      {
+        'sender': 'User_Y222',
+        'content': 'Welcome! It\'s pretty cool, you can chat with people nearby.'
+      },
+      {
+        'sender': 'User_Z333',
+        'content': 'Anyone know what\'s happening at the plaza tonight?'
+      },
+      {
+        'sender': 'User_X111',
+        'content': 'I think there\'s a live music event at 7 PM.'
+      },
+      {
+        'sender': 'User_Y222',
+        'content': 'Oh nice! What kind of music?'
+      },
+    ];
   }
 
   List<MessageModel> get messages => _messages

@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildNavItem(0, Icons.location_on_rounded, 'Nearby'),
-                  _buildNavItem(1, Icons.chat_bubble_rounded, 'Private'),
+                  _buildNavItem(1, Icons.chat_bubble_rounded, 'Chats'),
                   _buildNavItem(2, Icons.person_rounded, 'Profile'),
                 ],
               ),
