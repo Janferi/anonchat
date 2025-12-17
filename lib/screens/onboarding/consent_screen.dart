@@ -74,7 +74,7 @@ class ConsentScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PhoneInputScreen(),
+                        builder: (_) => const PhoneInputScreen( phoneNumber: ''),
                       ),
                     );
                   },
