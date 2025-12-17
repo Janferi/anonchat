@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import 'otp_screen.dart';
 import 'privacy_policy_screen.dart';
 
 class PhoneInputScreen extends StatefulWidget {
-  const PhoneInputScreen({super.key});
-
+  const PhoneInputScreen({super.key, required this.phoneNumber});
+  final String phoneNumber;
   @override
   State<PhoneInputScreen> createState() => _PhoneInputScreenState();
 }
@@ -22,79 +19,63 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: const BackButton(color: Colors.black),
-        title: const Text(
-          'Emergency Verification',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        centerTitle: true,
-      ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
+          child: Form( // ✅ FORM MEMBUNGKUS SEMUA
             key: _formKey,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 8),
 
-                /// Icon
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.security,
-                    size: 40,
-                    color: Colors.blue,
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+                ),
+
+                const SizedBox(height: 24),
+
+                Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2F80ED).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.shield_outlined,
+                      size: 36,
+                      color: Color(0xFF2F80ED),
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 32),
 
-                /// Title
                 const Text(
                   'Add Your Phone Number',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style:
+                      TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
                 ),
 
                 const SizedBox(height: 12),
 
-                /// Subtitle
                 const Text(
-                  'Your phone number is only used for emergency verification and account recovery. It will not be shared or used for other purposes.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                    height: 1.5,
-                  ),
+                  'Your phone number is strictly for emergency verification and account recovery.',
+                  style:
+                      TextStyle(fontSize: 14, color: Colors.grey, height: 1.5),
                 ),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 36),
 
-                /// Phone Field
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: const Text(
-                    'Phone Number',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                const Text(
+                  'Phone Number',
+                  style: TextStyle(fontWeight: FontWeight.w600),
                 ),
 
                 const SizedBox(height: 8),
@@ -114,123 +95,86 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                   decoration: InputDecoration(
                     hintText: '81234567890',
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Text(
-                            '+62',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
+                          const Text('+62',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 10),
                           Container(
-                            height: 24,
                             width: 1,
-                            color: Colors.grey[300],
+                            height: 24,
+                            color: Colors.grey.shade300,
                           ),
                         ],
                       ),
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(
-                        color: Colors.blue,
-                        width: 1.5,
-                      ),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 40),
+                const Spacer(),
 
-                /// Continue Button
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: authProvider.isLoading
-                        ? null
-                        : () async {
-                            if (!_formKey.currentState!.validate()) return;
+                    onPressed: () {
+                      if (!_formKey.currentState!.validate()) return;
 
-                            final formattedPhone = _formatPhone(
-                              _phoneController.text.trim(),
-                            );
+                      final formattedPhone =
+                          _formatPhone(_phoneController.text.trim());
 
-                            try {
-                              await authProvider.requestOtp(formattedPhone);
-
-                              if (context.mounted) {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        OtpScreen(phoneNumber: formattedPhone),
-                                  ),
-                                );
-                              }
-                            } catch (_) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Failed to send OTP. Please try again.',
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          },
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PrivacyPolicyScreen(
+                            phoneNumber: formattedPhone,
+                          ),
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      disabledBackgroundColor: Colors.blue.withOpacity(0.5),
+                      backgroundColor: const Color(0xFF2F80ED),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
                       ),
-                      elevation: 0,
                     ),
-                    child: authProvider.isLoading
-                        ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'Continue',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                    child: const Text(
+                      'Continue',
+                      style: TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PrivacyPolicyScreen(
+                            phoneNumber: '',
                           ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Privacy Policy',
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 ),
 
-                const SizedBox(height: 24),
-
-                /// Privacy
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PrivacyPolicyScreen(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Privacy Policy',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),

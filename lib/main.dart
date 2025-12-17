@@ -3,9 +3,8 @@ import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/nearby_provider.dart';
 import 'providers/private_chat_provider.dart';
-import 'screens/onboarding/consent_screen.dart';
 import 'screens/home_screen.dart';
-
+import 'screens/onboarding/splash_screen.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -37,7 +36,7 @@ class MyApp extends StatelessWidget {
             }
             return auth.isAuthenticated
                 ? const HomeScreen()
-                : const ConsentScreen();
+                : const SplashScreen();
           },
         ),
       ),
