@@ -17,7 +17,10 @@ class OtpScreen extends StatefulWidget {
 class _OtpScreenState extends State<OtpScreen> {
   final _formKey = GlobalKey<FormState>();
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
-  final List<TextEditingController> _controllers = List.generate(6, (index) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
   Timer? _timer;
   int _remainingSeconds = 45;
   bool _canResend = false;
@@ -112,12 +115,19 @@ class _OtpScreenState extends State<OtpScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: const BackButton(color: Colors.black),
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black,
+            size: 20,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           'Verification Code',
           style: TextStyle(
             color: Colors.black,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
         ),
@@ -177,7 +187,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   children: List.generate(6, (index) {
                     return SizedBox(
                       width: 50,
-                      height: 60,
+                      height: 80,
                       child: TextFormField(
                         controller: _controllers[index],
                         focusNode: _focusNodes[index],
@@ -209,7 +219,21 @@ class _OtpScreenState extends State<OtpScreen> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: const BorderSide(
-                              color: Colors.blue,
+                              color: Color(0xFF2F80ED),
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
+                              width: 1,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Colors.red,
                               width: 2,
                             ),
                           ),
@@ -224,21 +248,43 @@ class _OtpScreenState extends State<OtpScreen> {
                 /// Resend Timer
                 Center(
                   child: _canResend
-                      ? TextButton(
-                          onPressed: _resendOtp,
-                          child: const Text(
-                            'Resend Code',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
+                      ? GestureDetector(
+                          onTap: _resendOtp,
+                          child: RichText(
+                            text: const TextSpan(
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                              children: [
+                                TextSpan(text: "Didn't get a code? "),
+                                TextSpan(
+                                  text: 'Resend Code',
+                                  style: TextStyle(
+                                    color: Color(0xFF2F80ED),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         )
-                      : Text(
-                          'Resend code in $_timerText',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey,
+                      : RichText(
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey,
+                            ),
+                            children: [
+                              const TextSpan(text: "Didn't get a code? "),
+                              TextSpan(
+                                text: 'Resend in $_timerText',
+                                style: const TextStyle(
+                                  color: Color(0xFF2F80ED),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                 ),
@@ -257,7 +303,9 @@ class _OtpScreenState extends State<OtpScreen> {
                             if (otp.length != 6) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Please enter a valid 6-digit code'),
+                                  content: Text(
+                                    'Please enter a valid 6-digit code',
+                                  ),
                                 ),
                               );
                               return;
@@ -293,7 +341,9 @@ class _OtpScreenState extends State<OtpScreen> {
                           },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue,
-                      disabledBackgroundColor: Colors.blue.withValues(alpha: 0.5),
+                      disabledBackgroundColor: Colors.blue.withValues(
+                        alpha: 0.5,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(26),
                       ),

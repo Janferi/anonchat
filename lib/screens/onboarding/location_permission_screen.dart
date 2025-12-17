@@ -52,73 +52,71 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 24),
+              const Spacer(flex: 2),
 
               /// Icon
               Container(
-                width: 110,
-                height: 110,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF2F80ED).withOpacity(0.12),
+                width: 120,
+                height: 120,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2F80ED),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
-                  Icons.location_on_outlined,
-                  size: 56,
-                  color: Color(0xFF2F80ED),
+                  Icons.location_on,
+                  size: 60,
+                  color: Colors.white,
                 ),
               ),
 
-              const SizedBox(height: 36),
+              const SizedBox(height: 48),
 
               /// Title
               const Text(
                 'Enable Location to\nConnect',
+                'Enable Location to\nConnect',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  height: 1.3,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                  height: 1.2,
                 ),
               ),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 20),
 
               /// Subtitle
               const Text(
-                'AnonChat Local uses your location to find\n'
-                'and connect you with anonymous users in\n'
-                'your immediate area. Your exact position is\n'
-                'never shared.',
+                'AnonChat Local uses your location to find and connect you with anonymous users in your immediate area. Your exact position is never shared.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF828282),
-                  height: 1.6,
+                  fontSize: 15,
+                  color: Color(0xFF666666),
+                  height: 1.5,
                 ),
               ),
 
-              const SizedBox(height: 44),
+              const Spacer(flex: 2),
 
-              /// Allow Button
+              /// Allow Location Button
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 56,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _requestPermission,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2F80ED),
-                    disabledBackgroundColor:
-                        const Color(0xFF2F80ED).withOpacity(0.5),
-                    elevation: 0,
+                    disabledBackgroundColor: const Color(0xFF2F80ED).withOpacity(0.5),
                     shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
@@ -133,8 +131,9 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                         )
                       : const Text(
                           'Allow Location',
+                          'Allow Location',
                           style: TextStyle(
-                            fontSize: 15,
+                            fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                           ),
@@ -144,7 +143,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
 
               const SizedBox(height: 14),
 
-              /// Not Now
+              /// Not Now Button
               TextButton(
                 onPressed: _isLoading
                     ? null
@@ -159,11 +158,14 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                 child: const Text(
                   'Not Now',
                   style: TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF828282),
+                    color: Color(0xFF1A1A1A),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
+
+              const SizedBox(height: 32),
             ],
           ),
         ),
