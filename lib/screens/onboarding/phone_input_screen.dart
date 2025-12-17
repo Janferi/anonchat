@@ -21,23 +21,31 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form( // ✅ FORM MEMBUNGKUS SEMUA
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Form(
+              key: _formKey,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                const SizedBox(height: 16),
 
                 IconButton(
                   padding: EdgeInsets.zero,
+                  alignment: Alignment.centerLeft,
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 Center(
                   child: Container(
@@ -115,6 +123,15 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.red, width: 1),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(color: Colors.red, width: 2),
+                    ),
+                    errorStyle: const TextStyle(color: Colors.red),
                   ),
                 ),
 
@@ -148,7 +165,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                     child: const Text(
                       'Continue',
                       style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                          fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                 ),
@@ -175,7 +192,10 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                 ),
 
                 const SizedBox(height: 16),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ),

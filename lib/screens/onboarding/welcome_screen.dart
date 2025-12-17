@@ -40,7 +40,6 @@ class WelcomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
@@ -87,7 +86,7 @@ class WelcomeScreen extends StatelessWidget {
                 // Sign Up Button
 SizedBox(
   width: double.infinity,
-  height: 48,
+  height: 52,
   child: ElevatedButton(
     onPressed: () {
       Navigator.push(
@@ -101,7 +100,7 @@ SizedBox(
       backgroundColor: const Color(0xFF2F80ED),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(26),
       ),
     ),
     child: const Text(
@@ -115,6 +114,8 @@ SizedBox(
   ),
 ),
 
+const SizedBox(height: 4),
+
 // Log In
 TextButton(
   onPressed: () {
@@ -127,22 +128,25 @@ TextButton(
   },
   child: const Text(
     'Log In',
-    style: TextStyle(color: Color(0xFF2F80ED)),
+    style: TextStyle(
+      color: Color(0xFF2F80ED),
+      fontSize: 14,
+    ),
+  ),
+),
+
+const SizedBox(height: 12),
+
+const Text(
+  'Terms of Service & Privacy Policy',
+  style: TextStyle(
+    fontSize: 12,
+    color: Colors.grey,
   ),
 ),
 
                   ],
                 ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            const Text(
-              'Terms of Service & Privacy Policy',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
               ),
             ),
 
