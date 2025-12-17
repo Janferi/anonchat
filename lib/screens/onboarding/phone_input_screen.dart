@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'otp_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class PhoneInputScreen extends StatefulWidget {
   const PhoneInputScreen({super.key});
@@ -76,7 +77,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
 
                 /// Subtitle
                 const Text(
-                  'Your phone number is only used for emergency verification and account recovery.',
+                  'Your phone number is only used for emergency verification and account recovery. It will not be shared or used for other purposes.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -217,7 +218,14 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
 
                 /// Privacy
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyScreen(),
+                      ),
+                    );
+                  },
                   child: const Text(
                     'Privacy Policy',
                     style: TextStyle(color: Colors.grey),
