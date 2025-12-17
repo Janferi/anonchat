@@ -45,9 +45,8 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -81,6 +80,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
 
               /// Title
               const Text(
+                'Enable Location to\nConnect',
                 'Enable Location to\nConnect',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -117,8 +117,8 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                     disabledBackgroundColor: const Color(0xFF2F80ED).withOpacity(0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(28),
                     ),
-                    elevation: 0,
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -131,6 +131,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                         )
                       : const Text(
                           'Allow Location',
+                          'Allow Location',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -140,7 +141,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               /// Not Now Button
               TextButton(
@@ -149,7 +150,9 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen> {
                     : () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (_) => const HomeScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const HomeScreen(),
+                          ),
                         );
                       },
                 child: const Text(
