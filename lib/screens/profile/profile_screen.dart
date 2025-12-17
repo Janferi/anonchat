@@ -81,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const DataPermissionsPage(),
+                        builder: (_) => const PrivacyDataScreen(),
                       ),
                     );
                   },
@@ -94,7 +94,7 @@ class ProfileScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const PrivacyDataScreen(),
+                        builder: (_) => const DataPermissionsPage(),
                       ),
                     );
                   },
@@ -117,7 +117,6 @@ class ProfileScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 32),
-
 
           Container(
             decoration: BoxDecoration(
