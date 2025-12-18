@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import 'location_permission_screen.dart';
+import '../home_screen.dart';
 
 class OtpScreen extends StatefulWidget {
   final String phoneNumber;
@@ -312,17 +312,15 @@ class _OtpScreenState extends State<OtpScreen> {
                             }
 
                             try {
-                              await authProvider.verifyOtp(
+                              await authProvider.registerWithPhone(
                                 widget.phoneNumber,
-                                otp,
                               );
 
                               if (context.mounted) {
                                 Navigator.pushAndRemoveUntil(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        const LocationPermissionScreen(),
+                                    builder: (_) => const HomeScreen(),
                                   ),
                                   (_) => false,
                                 );

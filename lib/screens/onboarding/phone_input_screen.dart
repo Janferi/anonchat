@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'privacy_policy_screen.dart';
+import 'otp_screen.dart';
 
 class PhoneInputScreen extends StatefulWidget {
   const PhoneInputScreen({super.key, required this.phoneNumber});
@@ -150,7 +150,7 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => PrivacyPolicyScreen(
+                          builder: (_) => OtpScreen(
                             phoneNumber: formattedPhone,
                           ),
                         ),
@@ -171,25 +171,6 @@ class _PhoneInputScreenState extends State<PhoneInputScreen> {
                 ),
 
                 const SizedBox(height: 16),
-
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const PrivacyPolicyScreen(
-                            phoneNumber: '',
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Privacy Policy',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ),
 
                 const SizedBox(height: 16),
                     ],

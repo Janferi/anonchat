@@ -5,7 +5,14 @@ import 'providers/nearby_provider.dart';
 import 'providers/private_chat_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding/splash_screen.dart';
-void main() {
+import 'services/supabase_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Supabase
+  await SupabaseService.initialize();
+
   runApp(const MyApp());
 }
 

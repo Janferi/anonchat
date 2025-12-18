@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../home_screen.dart';
 import 'otp_screen.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
@@ -152,16 +153,16 @@ class PrivacyPolicyScreen extends StatelessWidget {
                           );
 
                           try {
-                            // KIRIM OTP DI SINI
-                            await authProvider.requestOtp(phoneNumber);
+                            // Register directly with phone number
+                            await authProvider.registerWithPhone(phoneNumber);
 
                             if (context.mounted) {
-                              Navigator.push(
+                              Navigator.pushAndRemoveUntil(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) =>
-                                      OtpScreen(phoneNumber: phoneNumber),
+                                  builder: (_) => const HomeScreen(),
                                 ),
+                                (route) => false,
                               );
                             }
                           } catch (_) {

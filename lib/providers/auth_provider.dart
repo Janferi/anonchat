@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import '../models/user_model.dart';
-import '../services/auth_service.dart';
+import '../models/chat_user.dart';
+import '../services/user_service.dart';
 
 class AuthProvider with ChangeNotifier {
-  final AuthService _authService = AuthService();
-  UserModel? _user;
+  final UserService _userService = UserService();
+  ChatUser? _user;
   bool _isLoading = false;
   bool _isInitialized = false;
 
-  UserModel? get user => _user;
+  ChatUser? get user => _user;
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
   bool get isAuthenticated => _user != null;
+  String? get userId => _user?.id;
 
   AuthProvider() {
     _init();
@@ -21,9 +22,12 @@ class AuthProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _user = await _authService.checkLoginStatus();
+      _user = await _userService.getCurrentUser();
+      if (_user != null) {
+        // Update online status
+        await _userService.updateOnlineStatus(_user!.id, true);
+      }
     } catch (e) {
-      // ignore: avoid_print
       print('Auth check failed: $e');
     } finally {
       _isLoading = false;
@@ -32,24 +36,11 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> requestOtp(String phoneNumber) async {
+  Future<void> registerWithPhone(String phoneNumber) async {
     _isLoading = true;
     notifyListeners();
     try {
-      await _authService.requestOtp(phoneNumber);
-    } catch (e) {
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  Future<void> verifyOtp(String phoneNumber, String otp) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      _user = await _authService.verifyOtp(phoneNumber, otp);
+      _user = await _userService.registerWithPhone(phoneNumber);
     } catch (e) {
       rethrow;
     } finally {
@@ -59,9 +50,9 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> updateProfile({
-    String? displayName,
+    String? username,
+    String? avatarUrl,
     String? bio,
-    String? anonHandle,
   }) async {
     if (_user == null) return;
 
@@ -69,13 +60,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 1));
-
-      _user = _user!.copyWith(
-        displayName: displayName,
+      _user = await _userService.updateProfile(
+        userId: _user!.id,
+        username: username,
+        avatarUrl: avatarUrl,
         bio: bio,
-        anonHandle: anonHandle,
       );
     } catch (e) {
       rethrow;
@@ -86,8 +75,21 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await _authService.logout();
+    if (_user != null) {
+      await _userService.updateOnlineStatus(_user!.id, false);
+    }
+    await _userService.logout();
     _user = null;
     notifyListeners();
+  }
+
+  Future<void> refreshUser() async {
+    if (_user != null) {
+      final refreshedUser = await _userService.getUserById(_user!.id);
+      if (refreshedUser != null) {
+        _user = refreshedUser;
+        notifyListeners();
+      }
+    }
   }
 }

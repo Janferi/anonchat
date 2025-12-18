@@ -44,6 +44,11 @@ dependencies:
   encrypt: ^5.0.3
   flutter_map: ^8.2.2
   latlong2: ^0.9.1
+  supabase_flutter: ^2.8.0
+  device_info_plus: ^11.2.0
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:

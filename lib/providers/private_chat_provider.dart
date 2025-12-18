@@ -1,49 +1,56 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../models/friend_request_model.dart';
-import '../models/private_chat_model.dart';
-import '../models/message_model.dart';
-import '../services/private_chat_service.dart';
+import '../models/chat_message.dart';
+import '../services/chat_service.dart';
+import '../services/friendship_service.dart';
 
 class PrivateChatProvider with ChangeNotifier {
-  final PrivateChatService _service = PrivateChatService();
+  final ChatService _chatService = ChatService();
+  final FriendshipService _friendshipService = FriendshipService();
 
-  List<FriendRequestModel> _requests = [];
-  List<FriendRequestModel> _sentRequests = [];
-  List<PrivateChatModel> _chats = [];
+  List<Map<String, dynamic>> _friendRequests = [];
+  List<Map<String, dynamic>> _friends = [];
+  List<Map<String, dynamic>> _chatRooms = [];
   bool _isLoading = false;
 
-  List<FriendRequestModel> get requests => _requests;
-  List<FriendRequestModel> get sentRequests => _sentRequests;
-  List<PrivateChatModel> get chats => _chats;
+  List<Map<String, dynamic>> get friendRequests => _friendRequests;
+  List<Map<String, dynamic>> get friends => _friends;
+  List<Map<String, dynamic>> get chatRooms => _chatRooms;
   bool get isLoading => _isLoading;
 
-  Future<void> loadData() async {
+  Future<void> loadData(String currentUserId) async {
     _isLoading = true;
     notifyListeners();
     try {
       final results = await Future.wait([
-        _service.getFriendRequests(),
-        _service.getSentFriendRequests(),
-        _service.getPrivateChats(),
+        _friendshipService.getPendingRequests(currentUserId),
+        _friendshipService.getFriends(currentUserId),
+        _chatService.getChatRoomsWithUsers(currentUserId),
       ]);
-      _requests = results[0] as List<FriendRequestModel>;
-      _sentRequests = results[1] as List<FriendRequestModel>;
-      _chats = results[2] as List<PrivateChatModel>;
+      _friendRequests = results[0];
+      _friends = results[1];
+      _chatRooms = results[2];
     } catch (e) {
-      debugPrint(e.toString());
+      debugPrint('Error loading data: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> sendFriendRequest(String phoneNumber) async {
+  Future<void> sendFriendRequest({
+    required String currentUserId,
+    String? phoneNumber,
+    String? username,
+  }) async {
     _isLoading = true;
     notifyListeners();
     try {
-      await _service.sendFriendRequest(phoneNumber);
-      // In real app, maybe show success message
+      await _friendshipService.sendFriendRequest(
+        currentUserId: currentUserId,
+        phoneNumber: phoneNumber,
+        username: username,
+      );
     } catch (e) {
       rethrow;
     } finally {
@@ -52,69 +59,127 @@ class PrivateChatProvider with ChangeNotifier {
     }
   }
 
-  Future<void> respondToRequest(String requestId, bool accept) async {
+  Future<void> respondToRequest(String friendshipId, bool accept, String currentUserId) async {
     try {
-      await _service.respondToRequest(requestId, accept);
-      await loadData(); // Reload to update lists
+      if (accept) {
+        await _friendshipService.acceptFriendRequest(friendshipId);
+      } else {
+        await _friendshipService.rejectFriendRequest(friendshipId);
+      }
+      await loadData(currentUserId);
     } catch (e) {
       rethrow;
     }
   }
 
   // Chat Detail Logic
-  List<MessageModel> _activeChatMessages = [];
-  List<MessageModel> get activeChatMessages => _activeChatMessages;
+  List<ChatMessage> _activeChatMessages = [];
+  List<ChatMessage> get activeChatMessages => _activeChatMessages;
   StreamSubscription? _chatSubscription;
+  StreamSubscription? _typingSubscription;
+  Map<String, bool> _typingStatus = {};
+  Map<String, bool> get typingStatus => _typingStatus;
 
-  void enterChat(String chatId) {
+  Future<void> enterChat(String chatRoomId, String currentUserId) async {
     _activeChatMessages = [];
+    _typingStatus = {};
     _chatSubscription?.cancel();
-    _chatSubscription = _service.getPrivateMessages(chatId).listen(
-      (message) {
-        _activeChatMessages.add(message);
-        notifyListeners();
-      },
-      onError: (error) {
-        debugPrint('Error receiving message: $error');
-      },
-      cancelOnError: false,
-    );
+    _typingSubscription?.cancel();
+
+    // Load initial messages
+    try {
+      _activeChatMessages = await _chatService.getMessages(chatRoomId);
+      notifyListeners();
+
+      // Mark messages as read
+      await _chatService.markMessagesAsRead(chatRoomId, currentUserId);
+
+      // Subscribe to realtime messages
+      _chatService.subscribeToMessages(chatRoomId);
+      _chatSubscription = _chatService.messagesStream.listen(
+        (messages) {
+          _activeChatMessages = messages;
+          notifyListeners();
+        },
+        onError: (error) {
+          debugPrint('Error receiving message: $error');
+        },
+        cancelOnError: false,
+      );
+
+      // Subscribe to typing status
+      _chatService.subscribeToTypingStatus(chatRoomId, currentUserId);
+      _typingSubscription = _chatService.typingStatusStream.listen(
+        (status) {
+          _typingStatus = status;
+          notifyListeners();
+        },
+      );
+    } catch (e) {
+      debugPrint('Error entering chat: $e');
+    }
   }
 
   void leaveChat() {
     _chatSubscription?.cancel();
+    _typingSubscription?.cancel();
+    _chatService.unsubscribeFromMessages();
+    _chatService.unsubscribeFromTypingStatus();
     _activeChatMessages = [];
-    notifyListeners();
+    _typingStatus = {};
   }
 
-  Future<void> sendMessage(String chatId, String content) async {
-    if (content.trim().isEmpty) return;
-
-    final message = MessageModel(
-      id: DateTime.now().toString(),
-      senderHandle: 'Me',
-      content: content,
-      timestamp: DateTime.now(),
-      isMe: true,
-    );
-    _activeChatMessages.add(message);
-    notifyListeners();
+  Future<void> sendMessage({
+    required String chatRoomId,
+    required String senderId,
+    required String receiverId,
+    required String messageText,
+    String messageType = 'text',
+  }) async {
+    if (messageText.trim().isEmpty) return;
 
     try {
-      await _service.sendPrivateMessage(chatId, content);
+      await _chatService.sendMessage(
+        chatRoomId: chatRoomId,
+        senderId: senderId,
+        receiverId: receiverId,
+        messageText: messageText,
+        messageType: messageType,
+      );
     } catch (e) {
-      // Handle error (e.g. mark message as failed)
       debugPrint('Error sending message: $e');
+      rethrow;
     }
   }
 
-  Future<void> blockUser(String userId) async {
+  Future<void> updateTypingStatus({
+    required String chatRoomId,
+    required String userId,
+    required bool isTyping,
+  }) async {
     try {
-      await _service.blockUser(userId);
-      // Remove from active lists
-      _requests.removeWhere((r) => r.fromUserId == userId);
-      _chats.removeWhere((c) => c.otherUserId == userId);
-      notifyListeners();
+      await _chatService.updateTypingStatus(
+        chatRoomId: chatRoomId,
+        userId: userId,
+        isTyping: isTyping,
+      );
+    } catch (e) {
+      debugPrint('Error updating typing status: $e');
+    }
+  }
+
+  Future<void> blockUser({
+    required String currentUserId,
+    required String blockedUserId,
+    String? reason,
+  }) async {
+    try {
+      await _friendshipService.blockUser(
+        blockerId: currentUserId,
+        blockedId: blockedUserId,
+        reason: reason,
+      );
+      await loadData(currentUserId);
     } catch (e) {
       rethrow;
     }
@@ -123,7 +188,8 @@ class PrivateChatProvider with ChangeNotifier {
   @override
   void dispose() {
     _chatSubscription?.cancel();
-    _service.dispose();
+    _typingSubscription?.cancel();
+    _chatService.dispose();
     super.dispose();
   }
 }

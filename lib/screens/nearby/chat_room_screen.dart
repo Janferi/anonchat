@@ -153,7 +153,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 iconColor: Colors.blue,
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Implement private message
                 },
               ),
               _buildBottomSheetOption(
@@ -162,7 +161,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 iconColor: Colors.purple,
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Implement block user
                 },
               ),
               _buildBottomSheetOption(
@@ -171,7 +169,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 iconColor: Colors.red,
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Implement report user
                 },
               ),
               const SizedBox(height: 16),
@@ -231,7 +228,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     nearbyProvider.sendMessageOptimistic(
       roomId: widget.room.id,
       content: content,
-      senderHandle: authProvider.user?.anonHandle ?? 'Anonymous',
+      senderHandle: authProvider.user?.username ?? 'Anonymous',
     );
 
     _scrollToBottom();

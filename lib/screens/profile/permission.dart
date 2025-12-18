@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class PrivacyDataScreen extends StatefulWidget {
-  const PrivacyDataScreen({super.key});
+class DataPermissionsPage extends StatefulWidget {
+  const DataPermissionsPage({super.key});
 
   @override
-  State<PrivacyDataScreen> createState() => _PrivacyDataScreenState();
+  State<DataPermissionsPage> createState() => _DataPermissionsPageState();
 }
 
-class _PrivacyDataScreenState extends State<PrivacyDataScreen> {
+class _DataPermissionsPageState extends State<DataPermissionsPage> {
   bool pushNotification = true;
   bool emergencyContact = false;
   bool backgroundLocation = false;

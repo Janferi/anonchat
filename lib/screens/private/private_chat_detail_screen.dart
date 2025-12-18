@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../../models/private_chat_model.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../models/chat_user.dart';
+import '../../models/chat_room.dart';
 import '../../providers/private_chat_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/image_service.dart';
 
 class PrivateChatDetailScreen extends StatefulWidget {
-  final PrivateChatModel chat;
+  final ChatRoom chatRoom;
+  final ChatUser otherUser;
 
-  const PrivateChatDetailScreen({super.key, required this.chat});
+  const PrivateChatDetailScreen({
+    super.key,
+    required this.chatRoom,
+    required this.otherUser,
+  });
 
   @override
   State<PrivateChatDetailScreen> createState() =>
@@ -17,9 +26,13 @@ class PrivateChatDetailScreen extends StatefulWidget {
 class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final ImageService _imageService = ImageService();
 
   PrivateChatProvider? _chatProvider;
+  String? _currentUserId;
   bool _isInitialized = false;
+  int _previousMessageCount = 0;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -28,11 +41,20 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         try {
-          _chatProvider = context.read<PrivateChatProvider>();
-          _chatProvider!.enterChat(widget.chat.id);
-          setState(() {
-            _isInitialized = true;
-          });
+          final authProvider = context.read<AuthProvider>();
+          _currentUserId = authProvider.userId;
+
+          if (_currentUserId != null) {
+            _chatProvider = context.read<PrivateChatProvider>();
+            _chatProvider!.enterChat(widget.chatRoom.id, _currentUserId!);
+
+            // Add listener for auto-scroll on new messages
+            _chatProvider!.addListener(_onMessagesChanged);
+
+            setState(() {
+              _isInitialized = true;
+            });
+          }
         } catch (e) {
           debugPrint('Error entering chat: $e');
         }
@@ -40,14 +62,24 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
     });
   }
 
-  @override
-  void deactivate() {
-    _chatProvider?.leaveChat();
-    super.deactivate();
+  void _onMessagesChanged() {
+    if (!mounted) return;
+
+    final currentCount = _chatProvider?.activeChatMessages.length ?? 0;
+    if (currentCount > _previousMessageCount) {
+      // New message received, scroll to bottom
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scrollController.hasClients) {
+          _scrollToBottom();
+        }
+      });
+    }
+    _previousMessageCount = currentCount;
   }
 
   @override
   void dispose() {
+    _chatProvider?.removeListener(_onMessagesChanged);
     _chatProvider?.leaveChat();
     _messageController.dispose();
     _scrollController.dispose();
@@ -77,16 +109,19 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
-              widget.chat.otherUserHandle,
+              widget.otherUser.username ?? 'Unknown',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Colors.black,
               ),
             ),
-            const Text(
-              'Online',
-              style: TextStyle(fontSize: 12, color: Colors.green),
+            Text(
+              widget.otherUser.isOnline ? 'Online' : 'Offline',
+              style: TextStyle(
+                fontSize: 12,
+                color: widget.otherUser.isOnline ? Colors.green : Colors.grey,
+              ),
             ),
           ],
         ),
@@ -124,17 +159,6 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
                     builder: (context, provider, child) {
                       final messages = provider.activeChatMessages;
 
-                      // Auto scroll with safety check
-                      if (messages.isNotEmpty) {
-                        WidgetsBinding.instance.addPostFrameCallback(
-                          (_) {
-                            if (mounted) {
-                              _scrollToBottom();
-                            }
-                          },
-                        );
-                      }
-
                       if (messages.isEmpty) {
                         return Center(
                           child: Column(
@@ -155,7 +179,7 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Start the conversation with ${widget.chat.otherUserHandle}',
+                                'Start the conversation with ${widget.otherUser.username}',
                                 style: TextStyle(color: Colors.grey[400]),
                               ),
                             ],
@@ -172,7 +196,7 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
                         itemCount: messages.length,
                         itemBuilder: (context, index) {
                           final msg = messages[index];
-                          final isMe = msg.isMe;
+                          final isMe = msg.isMe(_currentUserId ?? '');
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Row(
@@ -185,13 +209,18 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
                                   CircleAvatar(
                                     radius: 12,
                                     backgroundColor: Colors.grey[200],
-                                    child: Text(
-                                      widget.chat.otherUserHandle[0],
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.black,
-                                      ),
-                                    ),
+                                    backgroundImage: widget.otherUser.avatarUrl != null
+                                        ? NetworkImage(widget.otherUser.avatarUrl!)
+                                        : null,
+                                    child: widget.otherUser.avatarUrl == null
+                                        ? Text(
+                                            (widget.otherUser.username ?? 'U')[0].toUpperCase(),
+                                            style: const TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.black,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                   const SizedBox(width: 8),
                                 ],
@@ -227,13 +256,17 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        msg.content,
-                                        style: TextStyle(
-                                          color: isMe ? Colors.white : Colors.black87,
-                                          fontSize: 16,
+                                      // Image or Text message
+                                      if (msg.messageType == 'image')
+                                        _buildImageMessage(msg.content, isMe)
+                                      else
+                                        Text(
+                                          msg.content,
+                                          style: TextStyle(
+                                            color: isMe ? Colors.white : Colors.black87,
+                                            fontSize: 16,
+                                          ),
                                         ),
-                                      ),
                                       const SizedBox(height: 4),
                                       Text(
                                         DateFormat('HH:mm').format(msg.timestamp),
@@ -261,6 +294,179 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
     );
   }
 
+  // Build image message widget
+  Widget _buildImageMessage(String imageUrl, bool isMe) {
+    return GestureDetector(
+      onTap: () => _showFullImage(imageUrl),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          imageUrl,
+          width: 200,
+          height: 200,
+          fit: BoxFit.cover,
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return SizedBox(
+              width: 200,
+              height: 200,
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                      : null,
+                  color: isMe ? Colors.white : Colors.blue,
+                ),
+              ),
+            );
+          },
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: 200,
+              height: 200,
+              color: Colors.grey[300],
+              child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // Show full screen image
+  void _showFullImage(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 10,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Show image picker options
+  void _showImagePickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Colors.blue),
+              title: const Text('Choose from Gallery'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendImage(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Colors.blue),
+              title: const Text('Take a Photo'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickAndSendImage(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Pick and send image
+  Future<void> _pickAndSendImage(ImageSource source) async {
+    if (_currentUserId == null) return;
+
+    setState(() => _isUploadingImage = true);
+
+    try {
+      // Show uploading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Uploading image...'),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      final imageUrl = await _imageService.pickCompressAndUpload(
+        userId: _currentUserId!,
+        source: source,
+      );
+
+      if (imageUrl != null && mounted) {
+        // Hide uploading indicator
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
+        // Send image message
+        context.read<PrivateChatProvider>().sendMessage(
+          chatRoomId: widget.chatRoom.id,
+          senderId: _currentUserId!,
+          receiverId: widget.otherUser.id,
+          messageText: imageUrl,
+          messageType: 'image',
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to upload image'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+      }
+    }
+  }
+
   Widget _buildMessageInput() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -283,8 +489,14 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
               borderRadius: BorderRadius.circular(30),
             ),
             child: IconButton(
-              icon: const Icon(Icons.add, color: Colors.grey),
-              onPressed: () {}, // Attachment mock
+              icon: _isUploadingImage
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add, color: Colors.grey),
+              onPressed: _isUploadingImage ? null : _showImagePickerOptions,
             ),
           ),
           const SizedBox(width: 8),
@@ -525,28 +737,61 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () async {
-                          if (selectedReason != null) {
-                            detailsController.dispose();
-
-                            final navigator = Navigator.of(context);
+                          if (selectedReason != null && _currentUserId != null) {
+                            // Save contexts before async operations
+                            final navigatorContext = Navigator.of(context);
                             final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-                            navigator.pop();
+                            // Close bottom sheet first
+                            navigatorContext.pop();
 
-                            await _chatProvider?.blockUser(
-                              widget.chat.otherUserId,
+                            // Show loading
+                            showDialog(
+                              context: context,
+                              barrierDismissible: false,
+                              builder: (context) => const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             );
 
-                            if (mounted) {
-                              scaffoldMessenger.showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'User blocked and reported for: $selectedReason',
-                                  ),
-                                  backgroundColor: Colors.green,
-                                ),
+                            try {
+                              // Block user
+                              await _chatProvider?.blockUser(
+                                currentUserId: _currentUserId!,
+                                blockedUserId: widget.otherUser.id,
+                                reason: selectedReason,
                               );
-                              navigator.pop();
+
+                              if (mounted) {
+                                // Close loading dialog
+                                navigatorContext.pop();
+
+                                // Show success message
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'User blocked and reported for: $selectedReason',
+                                    ),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+
+                                // Return to previous screen (chat list)
+                                navigatorContext.pop();
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                // Close loading dialog
+                                navigatorContext.pop();
+
+                                // Show error message
+                                scaffoldMessenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to block user: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
                             }
                           }
                         },
@@ -637,8 +882,13 @@ class _PrivateChatDetailScreenState extends State<PrivateChatDetailScreen> {
 
   void _sendMessage() {
     final text = _messageController.text.trim();
-    if (text.isNotEmpty) {
-      context.read<PrivateChatProvider>().sendMessage(widget.chat.id, text);
+    if (text.isNotEmpty && _currentUserId != null) {
+      context.read<PrivateChatProvider>().sendMessage(
+        chatRoomId: widget.chatRoom.id,
+        senderId: _currentUserId!,
+        receiverId: widget.otherUser.id,
+        messageText: text,
+      );
       _messageController.clear();
     }
   }
